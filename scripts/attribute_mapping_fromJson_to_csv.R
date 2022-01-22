@@ -4,9 +4,19 @@ library(tidyverse)
 json_file <- "data/label_descriptions.json"
 json_data <- fromJSON(file = json_file)
 
+mapping_categories <- json_data$categories %>% 
+  map(unlist) %>% 
+  bind_rows() 
+
 mapping_attributes <- json_data$attributes %>% 
   map(unlist) %>% 
   bind_rows() 
+
+mapping_classes <- json_data$categories %>% 
+  map(unlist) %>% 
+  bind_rows() %>% 
+  mutate(id = as.numeric(id),
+         id = id + 1)
 
 mapping_attributes$id <- 0:293
 

@@ -56,7 +56,8 @@ IMAGE_SIZE=640
 CHECKPOINT_PATH="/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/tpu/models/official/detection/projects/fashionpedia/fashionpedia-r50-fpn/model.ckpt"
 PARAMS_OVERRIDE=""  # if any.
 LABEL_MAP_FILE="/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/tpu/models/official/detection/projects/fashionpedia/dataset/fashionpedia_label_map.csv"
-IMAGE_FILE_PATTERN="/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/data/blurr_test/AirForceOne/AirForceOne_15.jpg"
+
+IMAGE_FILE_PATTERN="/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/data/google_images/low_resolution/Anzugsschuhe/Anzugsschuhe11.jpg"
 OUTPUT_HTML="/home/nicolas/Desktop/test2.html"
 OUTPUT_FILE="/home/nicolas/Desktop/res"
 python /home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/tpu/models/official/detection/inference.py \
@@ -68,16 +69,28 @@ python /home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/tpu/models/official/detect
   --output_html="${OUTPUT_HTML?}" \
   --output_file="${OUTPUT_FILE?}" \
   --max_boxes_to_draw=11 \
-  --min_score_threshold=0.25
+  --min_score_threshold=0.2
 
 import numpy as np
-x=np.load("/home/nicolas/Desktop/res.npy", allow_pickle=True)
-x.item("classes")
-
+res=np.load("/home/nicolas/Desktop/res.npy", allow_pickle=True)
+res
+res[0][0]
+res[0][1]
+res[0][2]
+len(res[0][3]
 x[0].keys()
 len(x[0]['classes'])
 len(x[0]['boxes'])
 x[0]['image_file']
 x[0]['scores']
-x[0]['attributes']
+x[0]['attributes'].sum()
 x[0]['masks']
+
+classes = np.unique(x[0]['classes'])
+x[0]["classes"]
+
+np.argmax(x[0]['attributes'][0])
+x[0]['attributes'][0][248]
+len(np.unique(x[0]["classes"]))
+
+fashionpedia_inference
