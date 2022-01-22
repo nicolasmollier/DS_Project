@@ -11,6 +11,12 @@ library(tidyverse)
 library(shinyjs)
 library(htmlwidgets)
 library(readr)
+library(reticulate)
+library(jpeg)
+
+torch <- import("torch")
+np <- import("numpy")
+source_python("Inference_Shoe_Type_Classifier.py")
 
 
 
@@ -59,50 +65,52 @@ ui <- dashboardPage(
   ),
   
   dashboardSidebar(
-    width = "270",
-    sidebarSearchForm(textId = "searchbar", buttonId = "searchbtn", label = "Search..."),
+    width = "310",
     sidebarMenu(
       id = "side_bar_menue",
-      menuItem("Image Selection", tabName = "image_selection", icon = icon("camera")),
-      menuItem("Recommendation", tabName = "recommendation", icon = icon("dumbbell"))
-      
-      #menuItem("Model Performance", tabName = "model_performance", icon = icon("chart-line"))
+      br(), br(),
+      menuItem("Shoe Gallery", tabName = "image_selection", icon = icon("camera")),
+      menuItem("Outfit Recommendation", tabName = "recommendation", icon = icon("dumbbell")),
+      menuItem("Shoe  Recommendation", tabName = "recommendation2", icon = icon("dumbbell")),
+      menuItem("Outfit Evaluation", tabName = "evaluation", icon = icon("dumbbell"))
     )
   ),
+  
   dashboardBody(
+    
     customTheme,
+    
     tabItems(
       tabItem(
         tabName = "recommendation",
         fluidRow(
-          #shinyDirButton("folder", "Select a folder", "Please select a folder", FALSE),
-          #textOutput("folder"),
-          #actionButton("start_straining", label = "Starte Modell-Training"),
           uiOutput("recommende_shoe"),
           br(),
-          textOutput("text")
+          textOutput("text"),
+          textOutput("test_var")
           
         )
       ),
+      
       tabItem(
         tabName = "image_selection",
         
         fluidRow(
           useShinyjs(),
           tags$head(tags$script(HTML(js))),
-          #img(id="test",src="img/Adidas_Stan_Smith.jpg",width="19.5%",style=image_style),
           HTML(img_html),
-          #img(id="my_img3",src="img/New_Balance.jpg",width="19.5%",style=image_style),
-          #uiOutput("image_galery"),
-          
         ),
+        
         mainPanel(
           div(id = "image-container", style = "display:flexbox")
         )
+        
       ),
+      
       tabItem(
         tabName = "model_performance"
       )
+      
     )
   )
 )
@@ -138,20 +146,37 @@ server <- function(input, output, session) {
       paste0(".jpg")
     file_path <- paste0("img/", file_name)
     file_id <- "recommendation_shoe"
+    
+    current_img <- readJPEG(paste0("www/", file_path))
+    current_img_tensor <- torch$Tensor(current_img)
+    classifier_pred <- return_shoe_type(model, current_img_tensor)
+    #pred_class <- return_shoe_type(model, current_img_tensor)
+    
+    
     output$recommende_shoe <- renderUI({
       img(id = file_id, src = file_path, style = image_style_recommendation_shoe)
     })
     updateTabItems(session, "side_bar_menue", "recommendation")
+    #browser()
   })
+  
+  # observeEvent(input$side_bar_menue, {
+  #   if(input$side_bar_menue){}
+  # })
   
   
   output$text <- renderText({
     input$last_click
   })
   
+  #py_run_file("fashion_recommender_app/Inference_Shoe_Type_Classifier.py")
   
+  #output$test_var <- renderText({
+  #  y <- py$classes
+  #  y[2] %>% unlist()
+  #})
   
-  
+
   
   
 }
