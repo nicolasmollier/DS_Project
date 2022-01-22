@@ -20,7 +20,7 @@ device = "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
 
 
-image = preprocess(Image.open("data/blurr_test/New Balance/New Balance_4.jpg")).unsqueeze(0).to(device)
+image = preprocess(Image.open("data/google_images/Adidas_Shoe/Adidas_Shoe2.jpg")).unsqueeze(0).to(device)
 plt.imshow(image.squeeze(0).to('cpu').permute(1,2,0))
 
 
@@ -31,8 +31,8 @@ text = clip.tokenize(brands).to(device)
 text
 
 
-brand = "Adidas_shoe_only"
-data_file = "data/data_upload"
+brand = "Adidas_Shoe_Only"
+data_file = "data/google_images"
 data_file = data_file + "/" + brand
 image_files = os.listdir(data_file)
 image_files = [image_file for image_file in image_files if "xml" not in image_file]

@@ -8,9 +8,9 @@ np <- import("numpy")
 
 
 
-fashionpedia_results <- np$load("/media/nicolas/USB STICK/fp_results.npz", allow_pickle = TRUE)
-#fashionpedia_results <- np$load("data/fashionpedia_results.npz", allow_pickle = TRUE)
-fashionpedia_results <- fashionpedia_results["x"]
+#fashionpedia_results <- np$load("/media/nicolas/USB STICK/fp_results.npz", allow_pickle = TRUE)
+fashionpedia_results <- np$load("data/fashionpedia_results.npz", allow_pickle = TRUE)
+fashionpedia_results <- fashionpedia_results["x"] 
 
 fashionpedia_results <- do.call(rbind, fashionpedia_results)
 
