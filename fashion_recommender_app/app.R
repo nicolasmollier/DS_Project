@@ -2,68 +2,62 @@
 
 # Packages ----------------------------------------------------------------
 
-library(shiny)
-library(shinydashboard)
-library(dashboardthemes)
-library(shinyFiles)
-library(gallerier)
-library(tidyverse)
-library(shinyjs)
-library(htmlwidgets)
-library(readr)
-library(reticulate)
-library(jpeg)
+if (!require("pacman")){
+  install.packages("pacman")
+} 
 
+library(pacman)
+
+p_load(shiny, shinydashboard, dashboardthemes, shinyFiles, gallerier,
+       tidyverse, shinyjs, htmlwidgets, readr, reticulate, jpeg, here,
+       magrittr, waiter, shinycssloaders, shinybusy)
+
+
+# Python Packages
 torch <- import("torch")
 np <- import("numpy")
-source_python("Inference_Shoe_Type_Classifier.py")
-
-
 
 
 
 # java script and html ----------------------------------------------------
 
-js <- "
-$(document).ready(function(){
-  $('img').on('click', function(){
-    Shiny.setInputValue('last_click', this.id);
-  });
-})
-"
+source(here("scripts/js_html_for_app.R"))
 
-image_style_gallery <- "cursor:pointer; width:200pt; height:250pt;border: 1px solid #ddd;
-  border-radius: 0px;
-  padding: 8px;
-  width: 200pt;
-  hover:box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);"
-
-image_style_recommendation_shoe <- "cursor:pointer; width:200pt; height:250pt;border: 1px solid #ddd;
-  border-radius: 0px;
-  padding: 8px;
-  width: 200pt;
-  hover:box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);"
 
 
 # Functions ---------------------------------------------------------------
 
+# Theme and Logo of the App
 source("dashboard_theme.R")
 source("dashboard_logo.R")
+
+
 # dynamically create the html img tags from the image files to be displayed
 source("create_img_tags.R")
 img_html <- read_file("img_html")
 
+
+# Load the Classifier including pre-trained weights for Classifying uploaded 
+# Shoe images
+source_python("Inference_Shoe_Type_Classifier.py")
+
+
+# Functions for Feature 1: Get recommended items and load respective images
+# from the web
+source(here("scripts/Feature_coding.R"))
+source(here("scripts/feature_1_query_downloader.R"))
+source(here("scripts/feature_1_functions.R"))
 
 
 
 # UI ----------------------------------------------------------------------
 
 ui <- dashboardPage(
+
   dashboardHeader(
     title = customLogo,
     titleWidth = "270"
   ),
-  
   dashboardSidebar(
     width = "310",
     sidebarMenu(
@@ -77,21 +71,43 @@ ui <- dashboardPage(
   ),
   
   dashboardBody(
-    
     customTheme,
-    
+
+    # feature 1
     tabItems(
       tabItem(
         tabName = "recommendation",
-        fluidRow(
-          uiOutput("recommende_shoe"),
-          br(),
-          textOutput("text"),
-          textOutput("test_var")
+        column(2,
+          fluidRow(
+            withSpinner(uiOutput("selected_shoe"), size = 0)
+          )
+        ),
+        
+  
+              column(2,
+                     withSpinner(uiOutput("recommended_items_class_1"), size = 0)
+               ),
+              column(2,
+                     withSpinner(uiOutput("recommended_items_class_2"), color = "#4F4F4F")
+               ),
+               column(2,
+                      withSpinner(uiOutput("recommended_items_class_3"), size = 0)
+               ),
+               column(2,
+                      withSpinner(uiOutput("recommended_items_class_4"), size = 0)
+               ),
+               column(2,
+                      withSpinner(uiOutput("recommended_items_class_5"), size = 0)
+               ),
+    
+               
           
-        )
+          #textOutput("text"),
+          textOutput("feature_1_query")
+          #textOutput("test_var")
       ),
       
+      # feature 1
       tabItem(
         tabName = "image_selection",
         
@@ -105,76 +121,91 @@ ui <- dashboardPage(
           div(id = "image-container", style = "display:flexbox")
         )
         
-      ),
-      
-      tabItem(
-        tabName = "model_performance"
       )
       
     )
   )
 )
 
+
 # Server ------------------------------------------------------------------
 
 server <- function(input, output, session) {
   
+  # When an image in the gallery is clicked, we switch to the Outfit 
+  # Recommendation tab, where the clicked image is displayed together with the 
+  # recommended items
   
-  # image_galery_files <- list.files("www/img")
-  # image_galery_list <- list()
-  # for(i in seq_along(image_galery_files)){
-  #   file_name <- image_galery_files[[i]]
-  #   file_src <- paste0("img/", file_name)
-  #   image_galery_list[[i]] <- img(id=file_name,src=file_src,
-  #       style="cursor:pointer; width:200pt; height:250pt;border: 1px solid #ddd;
-  # border-radius: 0px;
-  # padding: 8px;
-  # width: 200pt;
-  # hover:box-shadow: 0 0 2px 1px rgba(0, 140, 186, 0.5);")
-  #   onclick(file_name, function(){
-  #     updateTabItems(session, "side_bar_menue", "model_training")
-  #     }
-  #   )
-  # }
-  
-  
-  #output$image_galery <- renderUI({image_galery_list})
-  
-  
+ 
+
   observeEvent(input$last_click, {
-    file_name <- str_replace_all(input$last_click, " ", "_") %>% 
-      paste0(".jpg")
-    file_path <- paste0("img/", file_name)
-    file_id <- "recommendation_shoe"
     
-    current_img <- readJPEG(paste0("www/", file_path))
-    current_img_tensor <- torch$Tensor(current_img)
-    classifier_pred <- return_shoe_type(model, current_img_tensor)
+    updateTabItems(session, "side_bar_menue", "recommendation")
+    #current_img <- readJPEG(paste0("www/", file_path))
+    #current_img_tensor <- torch$Tensor(current_img)
+    #classifier_pred <- return_shoe_type(model, current_img_tensor)
     #pred_class <- return_shoe_type(model, current_img_tensor)
     
-    
-    output$recommende_shoe <- renderUI({
-      img(id = file_id, src = file_path, style = image_style_recommendation_shoe)
+    file_path <- image_click_to_path(input$last_click)
+
+    output$selected_shoe <- renderUI({
+      img(id = "recommendation_shoe", src = file_path, style = image_style_recommendation_shoe)
     })
-    updateTabItems(session, "side_bar_menue", "recommendation")
-    #browser()
+    
+    recommendation_links_and_prices <- image_click_to_recommendation(input$last_click)[[1]]
+  
+    output$recommended_items_class_1 <- renderUI({
+      recommendation_links_and_prices %>%
+        .[1:3,] %>%
+        create_image_objects_for_recommedation()
+    })
+
+    output$recommended_items_class_2 <- renderUI({
+      recommendation_links_and_prices %>%
+        .[4:6,] %>%
+        create_image_objects_for_recommedation()
+    })
+
+    output$recommended_items_class_3 <- renderUI({
+      recommendation_links_and_prices %>%
+        .[7:9,] %>%
+        create_image_objects_for_recommedation()
+    })
+
+    output$recommended_items_class_4 <- renderUI({
+      recommendation_links_and_prices %>%
+        .[10:12,] %>%
+        create_image_objects_for_recommedation()
+    })
+
+    output$recommended_items_class_5 <- renderUI({
+      recommendation_links_and_prices %>%
+        .[13:15,] %>%
+        create_image_objects_for_recommedation()
+    })
   })
   
-  # observeEvent(input$side_bar_menue, {
-  #   if(input$side_bar_menue){}
-  # })
+  
   
   
   output$text <- renderText({
     input$last_click
   })
   
-  #py_run_file("fashion_recommender_app/Inference_Shoe_Type_Classifier.py")
+  output$feature_1_query <- renderText({
+    image_click_to_recommendation(input$last_click)[[2]] %>%
+      paste0(collapse = ", ") %>%
+      as.character()
+  })
   
-  #output$test_var <- renderText({
-  #  y <- py$classes
-  #  y[2] %>% unlist()
-  #})
+  
+  
+
+  
+  
+  
+  
+
   
 
   
