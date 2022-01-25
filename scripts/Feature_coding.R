@@ -24,14 +24,14 @@ attr_info$name <- gsub(" \\(.*", "", attr_info$name)
 
 # Drop the attributes "no non-textile material", no special manufacturing technique 
 # asymmetrical, symmetrical possible recommendation
-attr_info <- attr_info[-c(249, 270),]
+attr_info <- attr_info[-c(115, 116, 162, 163, 164, 181, 249, 270, 271),]
 
 # Omit class 24 (shoe) --> not relevant for recommendation
 base_feat1 <- readRDS(here("data/fp_select_attrib_per_class_raw.rds"))
 base_feat1 <- base_feat1 %>% filter(classes != 24)
 
 # Drop the attributes which are not suitable for recommendations
-base_feat1 <- base_feat1[,-c(252, 273)]
+base_feat1 <- base_feat1[,-c(118, 119, 165, 166, 167, 184, 252, 273, 274)]
 
 
 
