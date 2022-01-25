@@ -100,36 +100,6 @@ feature_1_get_queries <- function(x){
 }
 
 
-# Zus?tzlich noch Link zu Front-end, um zus?tzliche Query aufnehmen zu k?nnen!
-
-
-
-
-# Finde keine Treffer bei Zalando
-# Asos Treffer Suche funktioniert!
-
-# Query dann verwenden um via selenium das zu callen --> query als Input und code via reticulate callen
-
-
-
-###### BRAINSTORMING
-
-
-# Selected attr per class mit Brands
-# Durchschnitt nehmen / Median nehmen / Häufigste Attribute nehmen
-# Nutzer fragen, ob durchschnittlich --> zu kompliziert! Lass user diesen Input abnehmen
-
-# Basic Recommendation
-# "Etwas weiteres preisgeben, um näher zu spezifizieren" --> was empfielst du mir dann?
-
-
-# Anzeige Zalando, Asos --> um Kleidungsstücke anzuzeigen, nimmst erste 3, zeigst die in App
-# Preis, verfügbare Größen! 
-
-
-
-
-
 ################################################################################
 ###                               FEATURE II                                 ###
 ################################################################################
