@@ -39,14 +39,54 @@ base_feat1 <- base_feat1[,-c(118, 119, 165, 166, 167, 184, 252, 273, 274)]
 # Linkage to gallery or upload result
 # x <- "Adidas_Continental_80"
 
-feature_1_get_queries <- function(x){
+feature_1_get_queries <- function(x, filter_opts = NULL){
   # ANALYSIS
-  subset_feat1 <- subset(base_feat1, select= -image_file) %>% filter(brand == x) 
+  
+  # From front-end: just as an attempt
+  # filter_opts <- c("jacket", "skirt", "cardigan") %>% as.vector()
+  
+  # Determine the relevant class figures for the query out of the filter option
+  filter_opts_num <- filter_opts %>% as.data.frame()
+  names(filter_opts_num)[1] <- "description"
+  filter_opts_num <- filter_opts_num %>% inner_join(class_info, by = "description") %>%
+    select(classes)
+  
+  # Filter manually for relevant brand
+  # x <- "Adidas_Continental_80"
+  
+  subset_feat1 <- subset(base_feat1, select= -image_file) %>% filter(brand == x)
+  
+  # Test if the chosen attribute is in database (if recommendation is possible)
+  
+  # Dataframe for the empty features
+  print_statement <- rep(NA, nrow(filter_opts_num))
+  
+  # Check if desired fashion feature is included in database
+  for(i in 1:nrow(filter_opts_num)){
+    if(length(which(subset_feat1[,2]==filter_opts_num[i,1]))>0){
+      filter_opts_num[i,1] <- filter_opts_num[i,1]
+    } else {
+      filter_opts_num[i,1] <- NA
+      print_statement[i] <- paste0(filter_opts[i,1], "characteristic not in database included")
+    }
+  }
+  
+  # Just keep non-missing rows
+  filter_opts_num <- filter_opts_num[complete.cases(filter_opts_num), ] %>% as.data.frame()
+  names(filter_opts_num)[1] <- "classes"
+  print_statement <- print_statement[complete.cases(print_statement)]
   
   # Look at most named classes
-  class_freq <- 5
+  if (nrow(filter_opts_num) == 0){
+    class_freq <- 5
+  } else {
+    class_freq <- 5 - nrow(filter_opts_num) %>% as.numeric()
+  }
+  
   class_relevant <- subset_feat1 %>% count(classes) %>% arrange(desc(n)) %>% 
     head(class_freq) %>% select(classes)
+  class_relevant <- rbind(class_relevant, filter_opts_num)
+  
   
   # Filter the subset that only the relevant class observations are included
   class_attr <- subset_feat1 %>% 
@@ -57,7 +97,7 @@ feature_1_get_queries <- function(x){
   
   # Determine the max probability for the attribute of a class
   max_val <- rep(NA, class_freq)
-  for(i in 1:class_freq){
+  for(i in 1:nrow(class_relevant)){
     max_val[i] <- as.numeric(which.max(class_attr[i, 3:ncol(class_attr)]))
   }
   
@@ -96,7 +136,7 @@ feature_1_get_queries <- function(x){
     queries[i] <- gsub(",", "/",paste(class_score[i,2], class_score[i,3]))
   }
   
-  return(queries)
+  return(queries, print_statement)
 }
 
 
