@@ -8,9 +8,9 @@ library(tidyverse)
 
 feature_1_scrape <- function(query, country = "us", gender = "Men"){ 
   
-  url <- paste0("https://www.asos.com/", country, "/search/?page=1&q=", query, "+", gender)
+  url_current <- paste0("https://www.asos.com/", country, "/search/?page=1&q=", query, "+", gender)
   
-  x <- GET(url, add_headers('user-agent' = 'Tom'))
+  x <- GET(url_current, add_headers('user-agent' = 'Tom'))
   
   html_document <- read_html(x)
   
@@ -29,12 +29,21 @@ feature_1_scrape <- function(query, country = "us", gender = "Men"){
   
   result <- list(img_vector, price_vector)
   
-  result_df <- result %>% 
-    data.frame(link = .[[1]], price = .[[2]], url = url) %>% 
-    select(3, 4, 5)
+  if(length(result[[1]]) == 3 & length(result[[1]]) == 3){
+    result_df <- result %>% 
+      data.frame(link = .[[1]], price = .[[2]], url = url_current) %>% 
+      select(3, 4, 5)
+    
+  } else {
+    falty_url <<- url_current
+    result_df <- NULL
+  }
   
   return(result_df)
   
+  
+
+
 }
 
 
@@ -49,6 +58,7 @@ image_click_to_recommendation <- function(last_click, country = "us", gender = "
   # get the queries for the recommendations
   feature_1_queries <- last_click %>%
     str_replace_all(" ", "_") %>%
+    # get queries bases on the clicked image; the output are 5 fashionpedia attributes
     feature_1_get_queries() %>%
     str_remove_all("/") %>%
     str_replace_all(" ", "+")
@@ -56,13 +66,20 @@ image_click_to_recommendation <- function(last_click, country = "us", gender = "
   # save the image links and prices of the recommended items in a data frame
   temp_df = NULL
   for(i in feature_1_queries){
+    index <- i
+    current_scrape <- feature_1_scrape(i, country, gender) 
     if(is.null(temp_df)){
-      temp_df <- feature_1_scrape(i, country, gender) %>%
-        mutate(query = i)
+      temp_df <- current_scrape
+      if(!is.null(temp_df)){
+        temp_df <- temp_df %>% 
+          mutate(query = i)
+      }
     } else {
-      temp_df <- temp_df %>%
-        bind_rows(feature_1_scrape(i, country, gender) %>%
-                    mutate(query = i))
+      if(!is.null(current_scrape)){
+        temp_df <- temp_df %>%
+          bind_rows(current_scrape %>%
+                      mutate(query = i))
+      }
     }
   }
   
@@ -85,6 +102,7 @@ image_click_to_path <- function(image_click){
 
 
 create_image_objects_for_recommedation <- function(df){
+  loading_complete <<- FALSE
   link <- df$link
   url <- df$url
   price <- as.character(df$price)
@@ -99,6 +117,8 @@ create_image_objects_for_recommedation <- function(df){
     current_url <<- url[i]
     current_price <<- price[i]
     current_query <<- query[i]
+    
+    if(!is.na(current_price)){
       
     recommendation_list[[i]] <- tagList(
       
@@ -118,9 +138,12 @@ create_image_objects_for_recommedation <- function(df){
       
       div(id = paste0("price_", i), current_price)
     )
+    }
   }
   
   return(recommendation_list)
+  
+  loading_complete <<- TRUE
 }
 
 

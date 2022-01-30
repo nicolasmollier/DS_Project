@@ -99,7 +99,7 @@ feature_1_get_queries <- function(x){
   return(queries)
 }
 
-
+#feature_1_get_queries("Adidas_Continental_80")
 # Zus?tzlich noch Link zu Front-end, um zus?tzliche Query aufnehmen zu k?nnen!
 
 
