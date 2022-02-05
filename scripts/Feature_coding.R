@@ -133,7 +133,11 @@ feature_1_get_queries <- function(x, filter_opts = NULL){
   # Queries for Zalando
   queries <- rep(NA, nrow(class_score))
   for(i in 1:nrow(class_score)){
-    queries[i] <- gsub(",", "/",paste(class_score[i,2], class_score[i,3]))
+    if (class_score[i,2] != "glasses"){
+      queries[i] <- gsub(",", "/",paste(class_score[i,2], class_score[i,3]))
+    } else {
+      queries[i] <- gsub(",", "/",paste(class_score[i,2]))
+    }
   }
   
   return(queries, print_statement)
