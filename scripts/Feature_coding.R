@@ -5,15 +5,6 @@ library(SnowballC)
 library(reticulate)
 
 
-
-
-
-################################################################################
-###                               FEATURE I                                  ###
-################################################################################
-
-
-
 # Import csv file with class + attribute recognition
 class_info <- read.csv(here("data/fashionpedia_label_map.csv"), header = FALSE, sep = ":")
 names(class_info)[1] <- "classes"
@@ -22,13 +13,24 @@ names(class_info)[2] <- "description"
 attr_info <- read.csv(here("data/label_descriptions.csv"), header = TRUE, sep = ",")
 attr_info$name <- gsub(" \\(.*", "", attr_info$name)
 
+# Master database import
+base_feat <- readRDS(here("data/fp_select_attrib_per_class_raw.rds"))
+
+
+################################################################################
+###                               FEATURE I                                  ###
+################################################################################
+
+
+
+
+
 # Drop the attributes "no non-textile material", no special manufacturing technique 
 # asymmetrical, symmetrical possible recommendation
-attr_info <- attr_info[-c(115, 116, 162, 163, 164, 181, 249, 270, 271),]
+attr_info_1 <- attr_info[-c(115, 116, 162, 163, 164, 181, 249, 270, 271),]
 
 # Omit class 24 (shoe) --> not relevant for recommendation
-base_feat1 <- readRDS(here("data/fp_select_attrib_per_class_raw.rds"))
-base_feat1 <- base_feat1 %>% filter(classes != 24)
+base_feat1 <- base_feat %>% filter(classes != 24)
 
 # Drop the attributes which are not suitable for recommendations
 base_feat1 <- base_feat1[,-c(118, 119, 165, 166, 167, 184, 252, 273, 274)]
@@ -38,8 +40,9 @@ base_feat1 <- base_feat1[,-c(118, 119, 165, 166, 167, 184, 252, 273, 274)]
 # Input of shoe brand from gallery or shoe upload classifier
 # Linkage to gallery or upload result
 # x <- "Adidas_Continental_80"
+# country <- "fr"
 
-feature_1_get_queries <- function(x){
+feature_1_get_queries <- function(x, country){
   # ANALYSIS
   subset_feat1 <- subset(base_feat1, select= -image_file) %>% filter(brand == x) 
   
@@ -84,20 +87,52 @@ feature_1_get_queries <- function(x){
   class_score <- class_score %>% mutate(classes = as.character(classes),
                                         attribute = as.character(attribute))
   
-  for(i in 1:nrow(class_score)){
-    class_score[i,2] <- class_info[as.numeric(class_score[i,2]), 2]
-    class_score[i,3] <- attr_info[as.numeric(class_score[i,3]), 2]
-  }
-  
-  
-  # Queries for Zalando
   queries <- rep(NA, nrow(class_score))
-  for(i in 1:nrow(class_score)){
-    queries[i] <- gsub(",", "/",paste(class_score[i,2], class_score[i,3]))
-  }
+  class_score_trans <- rep(NA, nrow(class_score)) 
+  queries_trans <- rep(NA, nrow(class_score))
   
-  return(queries)
+  
+  for(i in 1:nrow(class_score)){
+  
+    
+    class_score[i,2] <- class_info[as.numeric(class_score[i,2]), 2]
+    class_score[i,3] <- attr_info_1[as.numeric(class_score[i,3]), 2]
+    
+    # remove attributes for class glasses
+    if (class_score[i,2] == "glasses"){ 
+      class_score[i,3] <- ""
+    }
+    
+    queries[i] <- gsub(",", "/",paste(class_score[i, 2], 
+                                      class_score[i, 3]))
+  
+    
+    # translate queries 
+    if(!(country %in% c("us", "gb"))){
+      class_score_trans[i] <- deep_translator$LingueeTranslator(
+        source = 'en',
+        target = country
+      ) %>% 
+        deep_translator$LingueeTranslator$translate(
+          word = class_score[[2]][i]
+        )
+      queries_trans[i] <- gsub(",", "/",paste(class_score_trans[i], 
+                                              class_score[i, 3]))
+      }
+    }
+
+  
+
+  return(
+    if(!(country %in% c("us", "gb"))){
+      list(queries = queries, queries_translated = queries_trans)
+    } else {
+      list(queries_translated = queries)
+    }
+  )
+
 }
+
 
 #feature_1_get_queries("Adidas_Continental_80")
 # Zus?tzlich noch Link zu Front-end, um zus?tzliche Query aufnehmen zu k?nnen!

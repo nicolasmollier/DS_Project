@@ -61,7 +61,7 @@ customTheme <- shinyDashboardThemeDIY(
   ,boxBorderRadius = "0"
   ,boxShadowSize = "none"
   ,boxShadowColor = ""
-  ,boxTitleSize = "18"
+  ,boxTitleSize = "14"
   ,boxDefaultColor = "#4F4F4F"
   ,boxPrimaryColor = "#9E9E9E"
   ,boxInfoColor = "#C7C7C7"

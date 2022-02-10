@@ -2,7 +2,9 @@
 library(rvest)
 library(httr)
 library(tidyverse)
+library(reticulate)
 
+deep_translator <- import("deep_translator")
 
 # Scrapes the image links, urls, prices and queries of the recommended items
 
@@ -59,7 +61,8 @@ image_click_to_recommendation <- function(last_click, country = "us", gender = "
   feature_1_queries <- last_click %>%
     str_replace_all(" ", "_") %>%
     # get queries bases on the clicked image; the output are 5 fashionpedia attributes
-    feature_1_get_queries() %>%
+    feature_1_get_queries(x = ., country) %>%
+    extract2("queries_translated") %>% 
     str_remove_all("/") %>%
     str_replace_all(" ", "+")
   
