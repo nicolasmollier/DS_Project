@@ -58,10 +58,10 @@ pca_on_database <- function(databse){
 
 
 
-
-
 feature_3_coding <- function(class_attr_vector, shoe_brand, recomm_amount = 3){
   
+  # Drop irrelevant attributes first
+  class_attr_vector <- class_attr_vector[,-c(117, 118, 164, 165, 166, 183, 251, 272, 273)]
   class_attr_vector <- class_attr_vector %>% 
     ungroup() %>% 
     select(-image_file)
@@ -69,7 +69,11 @@ feature_3_coding <- function(class_attr_vector, shoe_brand, recomm_amount = 3){
   
   # filter database with respect to the given shoe + aggregations per class
   # Only use classes which were also found by fashionpedia to make them more comparable
-  filtered_feat3 <- base_feat %>% 
+  
+  # Make the recommendation more accurate (drop irrelevant attributes)
+  base_feat3 <- base_feat[,-c(118, 119, 165, 166, 167, 184, 252, 273, 274)]
+  
+  filtered_feat3 <- base_feat3 %>% 
     ungroup() %>% 
     filter(brand == shoe_brand) %>%
     select(-brand, -image_file) %>% 
@@ -102,7 +106,7 @@ feature_3_coding <- function(class_attr_vector, shoe_brand, recomm_amount = 3){
   
   names(max_class_attr)[1] <- "id"
   max_class_attr <- max_class_attr %>% 
-    inner_join(attr_info[,1:2], by = "id")
+    inner_join(attr_info_1[,1:2], by = "id")
   
   # Biggest deviation of class with rather proper attribute
   class_attr_output <- cbind(min_class[,1], max_class_attr) %>% 
@@ -114,12 +118,10 @@ feature_3_coding <- function(class_attr_vector, shoe_brand, recomm_amount = 3){
   # 5 classes with the highest probabilities in class-attribute-combination
   
   # Therefore, unnecessary attributes are dropped again
-  add_classes <- base_feat %>% 
+  add_classes <- base_feat3 %>% 
     ungroup() %>% 
     filter(brand == shoe_brand) %>%
-    select(-brand, -image_file, -attribute_115, -attribute_116, -attribute_162, 
-           -attribute_163, -attribute_164, -attribute_181, -attribute_249,
-           -attribute_270, -attribute_271) %>% 
+    select(-brand, -image_file) %>% 
     group_by(classes) %>%
     summarise_all(mean) %>% 
     anti_join(class_attr_vector, by = "classes")
@@ -151,7 +153,7 @@ feature_3_coding <- function(class_attr_vector, shoe_brand, recomm_amount = 3){
     as.numeric() %>% -1
   
   final_set <- final_set %>% 
-    inner_join(attr_info[,1:2], by = "id") %>%
+    inner_join(attr_info_1[,1:2], by = "id") %>%
     inner_join(class_info, by = "classes") %>% 
     select(description, name, Probability)
   
