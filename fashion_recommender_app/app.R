@@ -171,6 +171,16 @@ ui <- dashboardPage(
                              multiple = TRUE,
                              options = list(maxItems = 5) 
                            )
+          ),
+          br(), br(),
+          box(
+            id = "feature_1_button_box",
+            actionButton(
+              inputId = "action_button_feature_1",
+              label = "Start Calculations"
+            ),
+            title = "Get Recommendations",
+            width = 9
           )
         ),
         column(
@@ -179,7 +189,7 @@ ui <- dashboardPage(
         ),
         column(
           2,
-          withSpinner(uiOutput("recommended_items_class_2"), color = "#4F4F4F")
+          withSpinner(uiOutput("recommended_items_class_2"), size = 0)
         ),
         column(
           2,
@@ -311,8 +321,10 @@ server <- function(input, output, session) {
     })
     
     
-
-    
+  })
+  
+  
+  observeEvent(input$action_button_feature_1, {
     #recommendation_links_and_prices <<- image_click_to_recommendation(input$last_click)[[1]]
     recommendation_links_and_prices <<-  reactive({
       req(input$last_click, 
@@ -331,25 +343,25 @@ server <- function(input, output, session) {
         .[1:3, ] %>%
         create_image_objects_for_recommedation()
     })
-
+    
     output$recommended_items_class_2 <- renderUI({
       recommendation_links_and_prices() %>%
         .[4:6, ] %>%
         create_image_objects_for_recommedation()
     })
-
+    
     output$recommended_items_class_3 <- renderUI({
       recommendation_links_and_prices() %>%
         .[7:9, ] %>%
         create_image_objects_for_recommedation()
     })
-
+    
     output$recommended_items_class_4 <- renderUI({
       recommendation_links_and_prices() %>%
         .[10:12, ] %>%
         create_image_objects_for_recommedation()
     })
-
+    
     output$recommended_items_class_5 <- renderUI({
       recommendation_links_and_prices() %>%
         .[13:15, ] %>%
