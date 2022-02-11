@@ -244,12 +244,11 @@ ui <- dashboardPage(
               title = "Upload an image of your outfit", 
               width = 12
             ),
-            uiOutput("feature_3_shoe_box_and_spinner")
+            uiOutput("feature_3_shoe_box_and_spinner"),
+            br(), br(),
+            uiOutput("feature_3_button_box_ui")
             
-            
-            
-    
-            
+  
           ),
           
          
@@ -282,7 +281,8 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   
   hide("feature_3_shoe_box")
-  
+  hide("feature_3_button_box")
+
 
 # Feature 1 ---------------------------------------------------------------
 
@@ -482,6 +482,9 @@ server <- function(input, output, session) {
       )
     }) 
     
+  
+
+    
     output$feature_3_shoe_box_and_spinner <- renderUI({
       box(
         fileInput(
@@ -492,7 +495,7 @@ server <- function(input, output, session) {
         ),
         imageOutput(
           "feature_3_image",
-          height = "250px"
+          height = "300px"
         ),
         textOutput("feature_2_shoe_pred"),
         
@@ -506,18 +509,7 @@ server <- function(input, output, session) {
     
     
     
-    feature_3_image_body <<- readJPEG(input$feature_3_upload_body$datapath)
-    reticulate::source_python(here("scripts/fashionpedia_python_script.py"))
-    feature_3_attributes <- extract_fashion_attibutes(
-      model = "attribute_mask_rcnn", 
-      image_size=as.integer(640), 
-      in_app_use=TRUE, 
-      shoe_image_path=input$feature_3_upload_body$datapath
-    )
-
-    feature_3_attributes_df <<- do.call(rbind, feature_3_attributes) %>% 
-      extract_attributes_from_fashionpedia_raw()
-    print("Feature 3 Fashionpedia Done")
+    
     
     # Enable the user to upload an image of a shoe only after a body shot has
     # already been provided
@@ -546,27 +538,7 @@ server <- function(input, output, session) {
         "Provide an image of your outfit before you upload a shoe image"
       ))
     } else {
-    feature_3_image_shoe <- reactive({
-      readJPEG(input$feature_3_upload_shoe$datapath)
-    })
-    torch <- import("torch")
-    feature_3_tensor_shoe <- torch$Tensor(feature_3_image_shoe())
-    feature_3_shoe_pred <- reactive({
-      return_shoe_type(model, feature_3_tensor_shoe)
-    })
-    output$feature_2_shoe_pred <- renderText({
-      paste0("Predicted Shoe Type: ", feature_3_shoe_pred())
-    })
     
-    output$feature_3_shoe_image_display <- renderUI({
-      img(
-        id = "feature_3_shoe_image_display_id",
-        src = input$feature_3_upload_shoe$datapath,
-        style = image_style_gallery
-      ) %>% 
-        as.character() %>% 
-        HTML()
-    })
     
     output$feature_3_image <- renderImage({
       list(
@@ -576,78 +548,28 @@ server <- function(input, output, session) {
       )
     }, deleteFile = FALSE)
     
-    feature_3_results <- reactive({
-      feature_3_coding(
-        feature_3_attributes_df,
-        feature_3_shoe_pred()
+    
+    
+    
+    output$feature_3_button_box_ui <- renderUI({
+      box(
+        id ="feature_3_button_box",
+        actionButton(
+          "action_button_feature_3",
+          label = "Start"
+        ),
+        title = "Get Recommendations", 
+        width = 12
       )
     })
     
-    output$feature_3_cosine_similarity <- renderText({
-      paste0(
-        "Cosine Similarity: ",
-        feature_3_results()[[1]] %>% 
-          scales::percent(0.1) 
-      )
-    })
+    # Enable the user to start the calculations only after a body shot and 
+    # shoe image have been provided
+    toggleElement(
+      id = "feature_3_button_box", 
+      condition = !is.null(input$feature_3_upload_shoe)
+    )
     
-
-    feature_3_diff_query <- feature_3_results() %>% 
-      extract2(2) %>% 
-      unite(
-        col = "query", 
-        everything(), 
-        sep = " ") %>% 
-      extract2("query")
-    
-    feature_3_further_queries <- feature_3_results() %>% 
-      extract2(3) %>% 
-      select(-Probability) %>% 
-      unite(
-        col = "query", 
-        everything(), 
-        sep = " ") %>% 
-      extract2("query")
-    
-    feature_3_diff_query_links <- reactive({
-      req(input$feature_3_upload_shoe, 
-          input$feature_3_upload_body)
-      feature_3_diff_query %>% 
-        cosine_similarity_to_recommendation() %>% 
-        extract2(1)
-    })
-    
-    feature_3_further_queries_links <- reactive({
-      req(input$feature_3_upload_shoe, 
-          input$feature_3_upload_body)
-      feature_3_further_queries %>% 
-        cosine_similarity_to_recommendation() %>% 
-        extract2(1)
-    })
-    
-
-    output$feature_3_recommended_items_class_1 <- renderUI({
-      feature_3_diff_query_links() %>%
-        create_image_objects_for_recommedation()
-    })
-    
-    output$feature_3_recommended_items_class_2 <- renderUI({
-      feature_3_further_queries_links() %>%
-        .[1:3, ] %>%
-        create_image_objects_for_recommedation()
-    })
-    
-    output$feature_3_recommended_items_class_3 <- renderUI({
-      feature_3_further_queries_links() %>%
-        .[4:6, ] %>%
-        create_image_objects_for_recommedation()
-    })
-    
-    output$feature_3_recommended_items_class_4 <- renderUI({
-      feature_3_further_queries_links() %>%
-        .[7:9, ] %>%
-        create_image_objects_for_recommedation()
-    })
     }
     
 
@@ -655,10 +577,117 @@ server <- function(input, output, session) {
   })
   
   
-  
-  observeEvent(input$feature_1_filter_items_class, {
-    xyz <<- input$feature_1_filter_items_class
+  observeEvent(input$action_button_feature_3, {
+    
+    browser()
+    feature_3_image_body <- readJPEG(input$feature_3_upload_body$datapath)
+    reticulate::source_python(here("scripts/fashionpedia_python_script.py"))
+    feature_3_attributes <- extract_fashion_attibutes(
+      model = "attribute_mask_rcnn",
+      image_size = as.integer(640),
+      in_app_use = TRUE,
+      shoe_image_path = input$feature_3_upload_body$datapath
+    )
+
+    feature_3_attributes_df <<- do.call(rbind, feature_3_attributes) %>%
+      extract_attributes_from_fashionpedia_raw()
+    print("Feature 3 Fashionpedia Done")
+
+    feature_3_image_shoe <- reactive({
+      readJPEG(input$feature_3_upload_shoe$datapath)
+    })
+    torch <- import("torch")
+    feature_3_tensor_shoe <- torch$Tensor(feature_3_image_shoe())
+    feature_3_shoe_pred <- reactive({
+      return_shoe_type(model_weights, feature_3_tensor_shoe)
+    })
+    output$feature_2_shoe_pred <- renderText({
+      paste0("Predicted Shoe Type: ", feature_3_shoe_pred())
+    })
+
+
+
+    feature_3_results <- reactive({
+      feature_3_coding(
+        feature_3_attributes_df,
+        feature_3_shoe_pred()
+      )
+    })
+
+    output$feature_3_cosine_similarity <- renderText({
+      paste0(
+        "Cosine Similarity: ",
+        feature_3_results()[[1]] %>%
+          scales::percent(0.1)
+      )
+    })
+
+
+    feature_3_diff_query <- feature_3_results() %>%
+      extract2(2) %>%
+      unite(
+        col = "query",
+        everything(),
+        sep = " "
+      ) %>%
+      extract2("query")
+
+    feature_3_further_queries <- feature_3_results() %>%
+      extract2(3) %>%
+      select(-Probability) %>%
+      unite(
+        col = "query",
+        everything(),
+        sep = " "
+      ) %>%
+      extract2("query")
+
+    feature_3_diff_query_links <- reactive({
+      req(
+        input$feature_3_upload_shoe,
+        input$feature_3_upload_body
+      )
+      feature_3_diff_query %>%
+        cosine_similarity_to_recommendation() %>%
+        extract2(1)
+    })
+
+    feature_3_further_queries_links <- reactive({
+      req(
+        input$feature_3_upload_shoe,
+        input$feature_3_upload_body
+      )
+      feature_3_further_queries %>%
+        cosine_similarity_to_recommendation() %>%
+        extract2(1)
+    })
+
+
+    output$feature_3_recommended_items_class_1 <- renderUI({
+      feature_3_diff_query_links() %>%
+        create_image_objects_for_recommedation()
+    })
+
+    output$feature_3_recommended_items_class_2 <- renderUI({
+      feature_3_further_queries_links() %>%
+        .[1:3, ] %>%
+        create_image_objects_for_recommedation()
+    })
+
+    output$feature_3_recommended_items_class_3 <- renderUI({
+      feature_3_further_queries_links() %>%
+        .[4:6, ] %>%
+        create_image_objects_for_recommedation()
+    })
+
+    output$feature_3_recommended_items_class_4 <- renderUI({
+      feature_3_further_queries_links() %>%
+        .[7:9, ] %>%
+        create_image_objects_for_recommedation()
+    })
   })
+  
+  
   
   
   
