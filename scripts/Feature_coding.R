@@ -42,25 +42,79 @@ base_feat1 <- base_feat1[,-c(118, 119, 165, 166, 167, 184, 252, 273, 274)]
 # x <- "Adidas_Continental_80"
 # country <- "fr"
 
-feature_1_get_queries <- function(x, country){
+
+feature_1_get_queries <- function(x, country, filter_opts = NULL){
   # ANALYSIS
-  subset_feat1 <- subset(base_feat1, select= -image_file) %>% filter(brand == x) 
+  
+  # From front-end: just as an attempt
+  # filter_opts <- c("jacket", "skirt", "cardigan") %>% as.vector()
+  
+  # Determine the relevant class figures for the query out of the filter option
+  filter_opts_num <- filter_opts %>% as.data.frame()
+  subset_feat1 <- subset(base_feat1, select = -image_file) %>% filter(brand == x)
+  
+  if (!is.null(filter_opts)) {
+    names(filter_opts_num)[1] <- "description"
+    filter_opts_num <- filter_opts_num %>%
+      inner_join(class_info, by = "description") %>%
+      select(classes)
+
+
+    # Filter manually for relevant brand
+    # x <- "Adidas_Continental_80"
+
+
+    # Test if the chosen attribute is in database (if recommendation is possible)
+
+    # Dataframe for the empty features
+    print_statement <- rep(NA, nrow(filter_opts_num))
+
+    # Check if desired fashion feature is included in database
+    for (i in 1:nrow(filter_opts_num)) {
+      if (length(which(subset_feat1[, 2] == filter_opts_num[i, 1])) > 0) {
+        filter_opts_num[i, 1] <- filter_opts_num[i, 1]
+      } else {
+        filter_opts_num[i, 1] <- NA
+        print_statement[i] <- paste0(filter_opts[i, 1], "characteristic not in database included")
+      }
+    }
+
+    # Just keep non-missing rows
+    filter_opts_num <- filter_opts_num[complete.cases(filter_opts_num), ] %>% as.data.frame()
+    names(filter_opts_num)[1] <- "classes"
+    print_statement <- print_statement[complete.cases(print_statement)]
+
+    
+  }
   
   # Look at most named classes
-  class_freq <- 5
-  class_relevant <- subset_feat1 %>% count(classes) %>% arrange(desc(n)) %>% 
-    head(class_freq) %>% select(classes)
+  if (nrow(filter_opts_num) == 0) {
+    class_freq <- 5
+  } else {
+    class_freq <- 5 - nrow(filter_opts_num) %>% as.numeric()
+  }
+  
+  class_relevant <- subset_feat1 %>%
+    count(classes) %>%
+    arrange(desc(n)) %>%
+    head(class_freq) %>%
+    select(classes) %>% 
+    ungroup()
+  
+  if(!is.null(filter_opts_num)){
+    class_relevant <- rbind(class_relevant, filter_opts_num)
+  }
+
   
   # Filter the subset that only the relevant class observations are included
   class_attr <- subset_feat1 %>% 
-    filter(classes == class_relevant[1,1] | classes == class_relevant[2,1] | 
-             classes == class_relevant[3,1] | classes == class_relevant[4,1] | 
-             classes == class_relevant[5,1]) %>% arrange(classes) %>% 
+    filter(classes %in% extract2(class_relevant, 1)) %>% 
+    arrange(classes) %>% 
     group_by(brand, classes) %>% summarise_all(mean)
   
   # Determine the max probability for the attribute of a class
   max_val <- rep(NA, class_freq)
-  for(i in 1:class_freq){
+  for(i in 1:length(extract2(class_relevant, 1))){
     max_val[i] <- as.numeric(which.max(class_attr[i, 3:ncol(class_attr)]))
   }
   
@@ -93,7 +147,7 @@ feature_1_get_queries <- function(x, country){
   
   
   for(i in 1:nrow(class_score)){
-  
+
     
     class_score[i,2] <- class_info[as.numeric(class_score[i,2]), 2]
     class_score[i,3] <- attr_info_1[as.numeric(class_score[i,3]), 2]
@@ -160,6 +214,7 @@ feature_1_get_queries <- function(x, country){
 
 # Anzeige Zalando, Asos --> um Kleidungsstücke anzuzeigen, nimmst erste 3, zeigst die in App
 # Preis, verfügbare Größen! 
+
 
 
 

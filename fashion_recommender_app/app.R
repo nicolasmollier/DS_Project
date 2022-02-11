@@ -320,9 +320,12 @@ server <- function(input, output, session) {
           input$feature_1_filter_country)
       image_click_to_recommendation(input$last_click,
                                     country = input$feature_1_filter_country,
-                                    gender = input$feature_1_filter_gender)[[1]]
+                                    gender = input$feature_1_filter_gender,
+                                    filter_opts = input$feature_1_filter_items_class)[[1]]
     })
-  
+    
+    
+    
     output$recommended_items_class_1 <- renderUI({
       recommendation_links_and_prices() %>%
         .[1:3, ] %>%
@@ -653,7 +656,9 @@ server <- function(input, output, session) {
   
   
   
-  
+  observeEvent(input$feature_1_filter_items_class, {
+    xyz <<- input$feature_1_filter_items_class
+  })
   
   
   

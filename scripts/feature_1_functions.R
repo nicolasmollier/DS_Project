@@ -55,13 +55,13 @@ feature_1_scrape <- function(query, country = "us", gender = "Men"){
 # Takes last clicked/selected image and returns a data frame with image links 
 # and prices of recommended items for that selected image
 
-image_click_to_recommendation <- function(last_click, country = "us", gender = "Men"){
+image_click_to_recommendation <- function(last_click, country = "us", gender = "Men", filter_opts = NULL){
 
   # get the queries for the recommendations
   feature_1_queries <- last_click %>%
     str_replace_all(" ", "_") %>%
     # get queries bases on the clicked image; the output are 5 fashionpedia attributes
-    feature_1_get_queries(x = ., country) %>%
+    feature_1_get_queries(x = ., country, filter_opts) %>%
     extract2("queries_translated") %>% 
     str_remove_all("/") %>%
     str_replace_all(" ", "+")
