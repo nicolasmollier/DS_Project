@@ -27,7 +27,7 @@ source(here::here("scripts/js_html_for_app.R"))
 
 # Data --------------------------------------------------------------------
 
-pca_result <- readRDS(here("data/fp_select_attrib_per_class_pca.rds"))
+pca_result <- readRDS(here::here("data/fp_select_attrib_per_class_pca.rds"))
 # ToDo: Außerhalb der App machen (vorher)
 pca_result$new_brand <- plyr::mapvalues(pca_result$brand, 
                                         from = c("Adidas_Stan_Smith", "Adidas_Ultraboost",
@@ -38,7 +38,7 @@ pca_result$new_brand <- plyr::mapvalues(pca_result$brand,
                                                "Sneaker", "Sandal", "Sandal",
                                                "Sneaker", "High-Heel", "Sneaker",
                                                "Sneaker"))
-database_unique_classes <- readRDS(here("data/database_unique_classes.rds"))
+database_unique_classes <- readRDS(here::here("data/database_unique_classes.rds"))
 
 
 
@@ -60,7 +60,14 @@ img_html <- read_file("img_html")
 source_python(here("scripts/Inference_Shoe_Type_Classifier.py"))
 
 # Load Random Forest Model for Feature 2 including pre-trained weights
-source_python(here("scripts/RF_prediction.py"))
+#source_python(here("scripts/RF_prediction.py"))
+source(here::here("scripts/RF_prediction_function.R"))
+load(here::here("fashion_recommender_app/model_weights/RF_model_feature2.RData"))
+
+
+# Fashionpedia
+reticulate::source_python(here("scripts/fashionpedia_python_script.py"))
+
 
 
 
@@ -189,7 +196,10 @@ ui <- dashboardPage(
         ),
         column(
           2,
-          withSpinner(uiOutput("recommended_items_class_2"), size = 0)
+          withSpinner(
+            uiOutput("recommended_items_class_2"), 
+            id = "feature_1_spinner"
+          )
         ),
         column(
           2,
@@ -211,58 +221,71 @@ ui <- dashboardPage(
       
       tabItem(
         tabName = "recommendation2",
-        conditionalPanel(
-          "input.side_bar_menue == 'recommendation2'",
-          fileInput("feature_2_upload", NULL, buttonLabel = "Upload...", multiple = TRUE),
-        ),
-        
-        
         column(
           2,
-          fluidRow(
-            imageOutput("feature_2_image")
-          )
-        ),
-        column(
-          6,
-          fluidRow(
-            withSpinner(
-              DT::dataTableOutput("feature_2_results")
+          br(), br(),
+          conditionalPanel(
+            "input.side_bar_menue == 'recommendation2'",
+            fluidRow(
+              useShinyjs(), # Set up shinyjs
+
+              box(
+                id = "feature_2_outfit_box",
+                fileInput("feature_2_upload", NULL, buttonLabel = "Upload...", multiple = TRUE),
+                imageOutput("feature_2_image"),
+                title = "Upload an image of your outfit",
+                width = 12
+              )
             )
           )
-        )
+        ),
+  
+        column(
+          2,
+          uiOutput("feature_2_recommended_items_class_1")
+        ),
+        column(
+          2,
+          uiOutput("feature_2_recommended_items_class_2")
+        ),
+        column(
+          2,
+          uiOutput("feature_2_recommended_items_class_3")
+        ),
       ),
+      
+      
+      
+      
+      
+      
       tabItem(
         tabName = "evaluation",
-        column(2,
-               br(), br(), 
-               
-        conditionalPanel(
-          "input.side_bar_menue == 'evaluation'",
-          fluidRow(
-            useShinyjs(),  # Set up shinyjs
-            
-            box(
-              id = "feature_3_outfit_box",
-              fileInput(
-                "feature_3_upload_body", 
-                NULL, 
-                buttonLabel = "Upload...", 
-                multiple = FALSE
-              ), 
-              uiOutput("feature_3_outfit_spinner"),
-              title = "Upload an image of your outfit", 
-              width = 12
+        column(
+          2,
+          br(), br(),
+          conditionalPanel(
+            "input.side_bar_menue == 'evaluation'",
+            fluidRow(
+              useShinyjs(), # Set up shinyjs
+
+              box(
+                id = "feature_3_outfit_box",
+                fileInput(
+                  "feature_3_upload_body",
+                  NULL,
+                  buttonLabel = "Upload...",
+                  multiple = FALSE
+                ),
+                uiOutput("feature_3_outfit_spinner"),
+                title = "Upload an image of your outfit",
+                width = 12
+              ),
+              uiOutput("feature_3_shoe_box_and_spinner"),
+              br(), br(),
+              uiOutput("feature_3_button_box_ui")
             ),
-            uiOutput("feature_3_shoe_box_and_spinner"),
-            br(), br(),
-            uiOutput("feature_3_button_box_ui")
-            
-  
-          ),
-          
-         
-        )
+          )
         ),
         column(
           2,
@@ -292,6 +315,7 @@ server <- function(input, output, session) {
   
   hide("feature_3_shoe_box")
   hide("feature_3_button_box")
+  hide("test_bla")
 
 
 # Feature 1 ---------------------------------------------------------------
@@ -302,6 +326,7 @@ server <- function(input, output, session) {
   # recommended items
   observeEvent(input$last_click, {
     updateTabItems(session, "side_bar_menue", "recommendation")
+    
     # current_img <- readJPEG(paste0("www/", file_path))
     # current_img_tensor <- torch$Tensor(current_img)
     # classifier_pred <- return_shoe_type(model, current_img_tensor)
@@ -325,45 +350,51 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$action_button_feature_1, {
+    
+    toggleElement(
+      id = "feature_1_spinner", 
+      condition = !is.null(isolate(input$last_click))
+    )
+    
     #recommendation_links_and_prices <<- image_click_to_recommendation(input$last_click)[[1]]
-    recommendation_links_and_prices <<-  reactive({
+    recommendation_links_and_prices <- reactive({
       req(input$last_click, 
           input$feature_1_filter_gender, 
           input$feature_1_filter_country)
-      image_click_to_recommendation(input$last_click,
-                                    country = input$feature_1_filter_country,
-                                    gender = input$feature_1_filter_gender,
-                                    filter_opts = input$feature_1_filter_items_class)[[1]]
+      image_click_to_recommendation(isolate(input$last_click),
+                                    country = isolate(input$feature_1_filter_country),
+                                    gender = isolate(input$feature_1_filter_gender),
+                                    filter_opts = isolate(input$feature_1_filter_items_class))[[1]]
     })
     
     
     
     output$recommended_items_class_1 <- renderUI({
-      recommendation_links_and_prices() %>%
+      isolate(recommendation_links_and_prices()) %>%
         .[1:3, ] %>%
         create_image_objects_for_recommedation()
     })
     
     output$recommended_items_class_2 <- renderUI({
-      recommendation_links_and_prices() %>%
+      isolate(recommendation_links_and_prices()) %>%
         .[4:6, ] %>%
         create_image_objects_for_recommedation()
     })
     
     output$recommended_items_class_3 <- renderUI({
-      recommendation_links_and_prices() %>%
+      isolate(recommendation_links_and_prices()) %>%
         .[7:9, ] %>%
         create_image_objects_for_recommedation()
     })
     
     output$recommended_items_class_4 <- renderUI({
-      recommendation_links_and_prices() %>%
+      isolate(recommendation_links_and_prices()) %>%
         .[10:12, ] %>%
         create_image_objects_for_recommedation()
     })
     
     output$recommended_items_class_5 <- renderUI({
-      recommendation_links_and_prices() %>%
+      isolate(recommendation_links_and_prices()) %>%
         .[13:15, ] %>%
         create_image_objects_for_recommedation()
     })
@@ -449,13 +480,43 @@ server <- function(input, output, session) {
       gather(-image_file, -classes, key = "PC", value = "value") %>%
       unite(col = PC_class, classes, PC) %>%
       spread(key = PC_class, value = value, fill = 0) %>%
-      select(-image_file)
+      select(-image_file) 
     
-    output$feature_2_results <- DT::renderDataTable({
-      feature_2_attributes_df_reac()
+    colnames(pca_results) <- pca_results %>% 
+      colnames() %>% 
+      paste0("class_", .)
+    
+   
+    
+
+    feature_2_recommended_shoes <- make_recomm_feature2(rf_final, pca_results)
+    
+    recommendation_links_and_prices_feature_2 <- reactiveValues(
+      recommendation_1 = feature_2_recommended_shoes[1] %>%
+        str_replace_all(" ", "+") %>% 
+        feature_1_scrape(),
+      recommendation_2 = feature_2_recommended_shoes[2] %>%
+        str_replace_all(" ", "+") %>% 
+        feature_1_scrape(),
+      recommendation_3 = feature_2_recommended_shoes[3] %>%
+        str_replace_all(" ", "+") %>% 
+        feature_1_scrape()
+    )
+    
+    output$feature_2_recommended_items_class_1 <- renderUI({
+      recommendation_links_and_prices_feature_2$recommendation_1 %>%
+        create_image_objects_for_recommedation(feature = 2)
     })
     
-    browser()
+    output$feature_2_recommended_items_class_2 <- renderUI({
+      recommendation_links_and_prices_feature_2$recommendation_2 %>%
+        create_image_objects_for_recommedation(feature = 2)
+    })
+    
+    output$feature_2_recommended_items_class_3 <- renderUI({
+      recommendation_links_and_prices_feature_2$recommendation_3 %>%
+        create_image_objects_for_recommedation(feature = 2)
+    })
     
   })
 
@@ -591,9 +652,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$action_button_feature_3, {
     
-    browser()
     feature_3_image_body <- readJPEG(input$feature_3_upload_body$datapath)
-    reticulate::source_python(here("scripts/fashionpedia_python_script.py"))
     feature_3_attributes <- extract_fashion_attibutes(
       model = "attribute_mask_rcnn",
       image_size = as.integer(640),
@@ -677,25 +736,25 @@ server <- function(input, output, session) {
 
     output$feature_3_recommended_items_class_1 <- renderUI({
       feature_3_diff_query_links() %>%
-        create_image_objects_for_recommedation()
+        create_image_objects_for_recommedation(feature = 3)
     })
 
     output$feature_3_recommended_items_class_2 <- renderUI({
       feature_3_further_queries_links() %>%
         .[1:3, ] %>%
-        create_image_objects_for_recommedation()
+        create_image_objects_for_recommedation(feature = 3)
     })
 
     output$feature_3_recommended_items_class_3 <- renderUI({
       feature_3_further_queries_links() %>%
         .[4:6, ] %>%
-        create_image_objects_for_recommedation()
+        create_image_objects_for_recommedation(feature = 3)
     })
 
     output$feature_3_recommended_items_class_4 <- renderUI({
       feature_3_further_queries_links() %>%
         .[7:9, ] %>%
-        create_image_objects_for_recommedation()
+        create_image_objects_for_recommedation(feature = 3)
     })
   })
   

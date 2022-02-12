@@ -87,9 +87,9 @@ feature_3_coding <- function(class_attr_vector, shoe_brand, recomm_amount = 3){
   cosine_score <- rep(NA, nrow(filtered_feat3))
   
   for(i in 1:nrow(filtered_feat3)){
-    cosine_score[i] <- cosine(filtered_feat3[i,] %>% 
+    cosine_score[i] <- cosine(filtered_feat3[i, 2:ncol(filtered_feat3)] %>% 
                                 as.vector() %>% unlist(), 
-                              class_attr_vector[i,] %>% 
+                              class_attr_vector[i, 2:ncol(class_attr_vector)] %>% 
                                 as.vector() %>% 
                                 unlist())
   }

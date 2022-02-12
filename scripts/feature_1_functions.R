@@ -104,7 +104,7 @@ image_click_to_path <- function(image_click){
 
 
 
-create_image_objects_for_recommedation <- function(df){
+create_image_objects_for_recommedation <- function(df, feature = 1){
   loading_complete <<- FALSE
   link <- df$link
   url <- df$url
@@ -126,20 +126,20 @@ create_image_objects_for_recommedation <- function(df){
     recommendation_list[[i]] <- tagList(
       
       # create headers on top of the columns that contains each contain three images (rows)
-      if(i %in% c(1,4,7,11)){
-        h5(id = paste0("item_class", i), 
+      if(i %in% c(1,4,7,11) & feature != 2){
+        h5(id = paste0("feature_", feature, "_item_class", i), 
            tags$b(current_query),
            align = "center")
       },
       
       img(
-        id = paste0("recommendation_image_", i), 
+        id = paste0("feature_", feature, "_recommendation_image_", i), 
         src = current_link, 
         style = image_style_recommendation_shoe
       ) %>% 
       a(href = current_url),
       
-      div(id = paste0("price_", i), current_price)
+      div(id = paste0("feature_", feature, "_price_", i), current_price)
     )
     }
   }
