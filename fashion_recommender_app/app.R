@@ -122,7 +122,10 @@ ui <- dashboardPage(
     # ),
     
     
-    # feature 1: Recommendation Page
+
+## Feature 1 - UI ----------------------------------------------------------
+
+
     tabItems(
       # feature 1: Image Selection in Gallery
       tabItem(
@@ -139,86 +142,109 @@ ui <- dashboardPage(
       ),
       tabItem(
         tabName = "recommendation",
-        conditionalPanel("input.side_bar_menue == 'recommendation'",
-        column(
-          2,
-          fluidRow(
-            withSpinner(uiOutput("selected_shoe"), size = 0)
-          ),
-          br(), br(), br(),
-          conditionalPanel("!is.null(output.recommended_items_class_2)",
-            selectizeInput(
-              "feature_1_filter_gender",
-              label = "Change your gender",
-              choices = c("Men", "Women", "Diverse"),
-              selected = "Men",
-              width = "230px"
+        conditionalPanel(
+          "input.side_bar_menue == 'recommendation'",
+          column(
+            2,
+            fluidRow(
+              withSpinner(uiOutput("selected_shoe"), size = 0)
+            ),
+            br(), br(), br(),
+            conditionalPanel(
+              "!is.null(output.recommended_items_class_2)",
+              selectizeInput(
+                "feature_1_filter_gender",
+                label = "Change your gender",
+                choices = c("Men", "Women", "Diverse"),
+                selected = "Men",
+                width = "230px"
+              )
+            ),
+            br(),
+            conditionalPanel(
+              "input.side_bar_menue == 'recommendation'",
+              selectizeInput(
+                "feature_1_filter_country",
+                label = "Change country of origin",
+                choices = c("de", "es", "fr", "gb", "it", "us"),
+                selected = "us",
+                width = "230px"
+              )
+            ),
+            conditionalPanel(
+              "input.side_bar_menue == 'recommendation'",
+              selectizeInput(
+                "feature_1_filter_items_class",
+                label = "Which items do you want recommendations for?",
+                choices = c(
+                  "shirt, blouse", "top, t-shirt, sweatshirt",
+                  "sweater", "cardigan", "jacket", "vest", "pants",
+                  "shorts", "skirt", "coat", "dress", "jumpsuit",
+                  "glasses", "hat", "tie"
+                ) %>%
+                  sort(),
+                width = "230px",
+                multiple = TRUE,
+                options = list(maxItems = 5)
+              )
+            ),
+            br(), br(),
+            box(
+              id = "feature_1_button_box",
+              actionButton(
+                inputId = "action_button_feature_1",
+                label = "Start Calculations"
+              ),
+              title = "Get Recommendations",
+              width = 9
             )
           ),
-          br(),
-          conditionalPanel("input.side_bar_menue == 'recommendation'",
-                           selectizeInput(
-                             "feature_1_filter_country",
-                             label = "Change country of origin",
-                             choices = c("de", "es", "fr", "gb", "it", "us"),
-                             selected = "us",
-                             width = "230px"
-                           )
+          column(
+            2,
+            withSpinner(
+              uiOutput("recommended_items_class_1"),
+              size = 0
+            )
           ),
-          conditionalPanel("input.side_bar_menue == 'recommendation'",
-                           selectizeInput(
-                             "feature_1_filter_items_class",
-                             label = "Which items do you want recommendations for?",
-                             choices = c("shirt, blouse", "top, t-shirt, sweatshirt", 
-                                         "sweater", "cardigan", "jacket", "vest", "pants", 
-                                         "shorts", "skirt", "coat", "dress", "jumpsuit", 
-                                         "glasses", "hat", "tie") %>% 
-                               sort(),
-                             width = "230px",
-                             multiple = TRUE,
-                             options = list(maxItems = 5) 
-                           )
+          column(
+            2,
+            withSpinner(
+              uiOutput("recommended_items_class_2"),
+              id = "feature_1_spinner",
+              color = "#4F4F4F"
+            )
           ),
-          br(), br(),
-          box(
-            id = "feature_1_button_box",
-            actionButton(
-              inputId = "action_button_feature_1",
-              label = "Start Calculations"
-            ),
-            title = "Get Recommendations",
-            width = 9
+          column(
+            2,
+            withSpinner(
+              uiOutput("recommended_items_class_3"),
+              size = 0
+            )
+          ),
+          column(
+            2,
+            withSpinner(
+              uiOutput("recommended_items_class_4"),
+              size = 0
+            )
+          ),
+          column(
+            2,
+            withSpinner(
+              uiOutput("recommended_items_class_5"),
+              size = 0
+            )
           )
-        ),
-        column(
-          2,
-          withSpinner(uiOutput("recommended_items_class_1"), size = 0)
-        ),
-        column(
-          2,
-          withSpinner(
-            uiOutput("recommended_items_class_2"), 
-            id = "feature_1_spinner"
-          )
-        ),
-        column(
-          2,
-          withSpinner(uiOutput("recommended_items_class_3"), size = 0)
-        ),
-        column(
-          2,
-          withSpinner(uiOutput("recommended_items_class_4"), size = 0)
-        ),
-        column(
-          2,
-          withSpinner(uiOutput("recommended_items_class_5"), size = 0)
-        ),
-        textOutput("feature_1_query")
         )
       ),
       
+     
       
       
+
+## Feature 2 - UI ----------------------------------------------------------
+
+    
       tabItem(
         tabName = "recommendation2",
         column(
@@ -256,8 +282,10 @@ ui <- dashboardPage(
       
       
       
-      
-      
+
+
+## Feature 3 - UI ----------------------------------------------------------
+
       
       tabItem(
         tabName = "evaluation",
@@ -315,7 +343,7 @@ server <- function(input, output, session) {
   
   hide("feature_3_shoe_box")
   hide("feature_3_button_box")
-  hide("test_bla")
+  hide("feature_1_spinner")
 
 
 # Feature 1 ---------------------------------------------------------------
@@ -325,6 +353,13 @@ server <- function(input, output, session) {
   # Recommendation tab, where the clicked image is displayed together with the
   # recommended items
   observeEvent(input$last_click, {
+    
+    hide("recommended_items_class_1")
+    hide("recommended_items_class_2")
+    hide("recommended_items_class_3")
+    hide("recommended_items_class_4")
+    hide("recommended_items_class_5")
+    
     updateTabItems(session, "side_bar_menue", "recommendation")
     
     # current_img <- readJPEG(paste0("www/", file_path))
@@ -353,7 +388,7 @@ server <- function(input, output, session) {
     
     toggleElement(
       id = "feature_1_spinner", 
-      condition = !is.null(isolate(input$last_click))
+      condition = !is.null(isolate(input$action_button_feature_1))
     )
     
     #recommendation_links_and_prices <<- image_click_to_recommendation(input$last_click)[[1]]
@@ -398,6 +433,14 @@ server <- function(input, output, session) {
         .[13:15, ] %>%
         create_image_objects_for_recommedation()
     })
+    
+    show("recommended_items_class_1")
+    show("recommended_items_class_2")
+    show("recommended_items_class_3")
+    show("recommended_items_class_4")
+    show("recommended_items_class_5")
+    
+    
   })
   
   
