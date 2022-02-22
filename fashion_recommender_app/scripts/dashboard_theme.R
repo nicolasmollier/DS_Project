@@ -66,7 +66,7 @@ customTheme <- shinyDashboardThemeDIY(
   ,boxPrimaryColor = "#9E9E9E"
   ,boxInfoColor = "#C7C7C7"
   ,boxSuccessColor = "#70AD47"
-  ,boxWarningColor = "#ED7D31"
+  ,boxWarningColor = "#8f8f8f"
   ,boxDangerColor = "#FF5D30"
   
   ,tabBoxTabColor = "#FFFFFF"
