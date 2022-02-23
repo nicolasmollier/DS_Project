@@ -41,7 +41,7 @@ from pycocotools import mask as mask_api
 import tensorflow.compat.v1 as tf
 import os
 
-os.chdir("/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/tpu/models/")
+os.chdir("/srv/shiny-server/fashion_recommender_app_cloud/tpu/models")
 # os.getcwd()
 
 # import official.detection.projects
@@ -65,14 +65,12 @@ from utils import mask_utils
 from utils.object_detection import visualization_utils
 from hyperparameters import params_dict
 
-os.chdir("/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/fashion_recommender_app_cloud/")
-
 
 
 model="attribute_mask_rcnn"
 image_size=640
-checkpoint_path="/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/tpu/models/official/detection/projects/fashionpedia/fashionpedia-r50-fpn/model.ckpt"
-label_map_file="/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/tpu/models/official/detection/datasets/coco_label_map.csv"
+checkpoint_path="/srv/shiny-server/fashion_recommender_app_cloud/tpu/models/projects/fashionpedia/fashionpedia-r50-fpn/model.ckpt"
+label_map_file="official/detection/datasets/coco_label_map.csv"
 image_file_pattern="/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/data/google_images/low_resolution/Adidas_Continental_80/Adidas_Continental_805.jpg"
 output_html="./test.html"
 label_map_format = "csv"
@@ -84,10 +82,10 @@ image_size = 640
 
 
 
-brand_folder = "/home/nicolas/Desktop/test_images" #"/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/data/google_images/low_resolution" 
-output_folder = "/home/nicolas/Desktop/test"
-brand_query = os.listdir(brand_folder)
-brand_query = [x for x in brand_query if x != "geckodriver.log"]
+#brand_folder = "/home/nicolas/Desktop/test_images" #"/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/data/google_images/low_resolution" 
+#output_folder = "/home/nicolas/Desktop/test"
+#brand_query = os.listdir(brand_folder)
+#brand_query = [x for x in brand_query if x != "geckodriver.log"]
 
 
 def extract_fashion_attibutes(model, image_size, in_app_use, shoe_image_path):
@@ -165,8 +163,8 @@ def extract_fashion_attibutes(model, image_size, in_app_use, shoe_image_path):
       saver.restore(sess, checkpoint_path)
 
       #res = []
-      image_files = os.listdir(brand_folder) # shoe_image_path
-      image_files = [x for x in image_files if x != "geckodriver.log"]
+      #image_files = os.listdir(brand_folder) # shoe_image_path
+      #image_files = [x for x in image_files if x != "geckodriver.log"]
       #image_files = tf.gfile.Glob(image_file_pattern)
       inference_index = 0
       #temp_res = pd.DataFrame(columns = ['image_name', 'classes', 'probabilities', 'attributes', 'masks', 'boxes', 'height', 'width'])

@@ -21,16 +21,33 @@ names(class_info)[2] <- "description"
 attr_info <- read.csv(here("data/label_descriptions.csv"), header = TRUE, sep = ",")
 attr_info$name <- gsub(" \\(.*", "", attr_info$name)
 
+
 # Master database import
 base_feat <- readRDS(here("data/fp_select_attrib_per_class_raw.rds"))
+
+
+# Preparation for descriptives graphs in data exploration
+
+# Master database for descriptives and matching procedure
+descriptives_db <- base_feat
+
+descriptives_db$new_classes <- mapvalues(descriptives_db$classes, 
+                                 from = seq(1, 46), 
+                                 to = new_classes)
+descriptives_db$new_brand <- mapvalues(descriptives_db$brand, 
+                                 from = unique(descriptives_db$brand), 
+                                 to = new_brand)
+
 
 
 # Drop the attributes "no non-textile material", no special manufacturing technique 
 # asymmetrical, symmetrical possible recommendation
 attr_info_1 <- attr_info[-c(115, 116, 162, 163, 164, 181, 249, 270, 271),]
 
+
 # Omit class 24 (shoe) --> not relevant for recommendation
 base_feat1 <- base_feat %>% filter(classes != 24)
+
 
 # Drop the attributes which are not suitable for recommendations
 base_feat1 <- base_feat1[,-c(118, 119, 165, 166, 167, 184, 252, 273, 274)]
@@ -138,8 +155,8 @@ feature_1_get_queries <- function(x, country, filter_opts = NULL){
     class_score[i,3] <- attr_info_1[as.numeric(class_score[i,3]), 2]
     
     # remove attributes for class glasses
-    if (class_score[i,2] == "glasses"){ 
-      class_score[i,3] <- ""
+    if (class_score[i,2] %in% c("glasses", "watch", "sock", "bag, wallet", "tie")){ 
+      class_score[i,3] <- " "
     }
     
     queries[i] <- gsub(",", "/",paste(class_score[i, 2], 
@@ -187,8 +204,14 @@ feature_1_scrape <- function(query, country = "us", gender = "Men"){
   
       x <- GET(url_current, add_headers('user-agent' = 'Tom'))
   
+      # In order to avoid errors when different countries are selected
+      Sys.sleep(1)
+      
       html_document <- read_html(x)
-  
+      
+      # In order to avoid errors when different countries are selected
+      Sys.sleep(1)
+      
       img_xpath <- '//*[contains(concat( " ", @class, " " ), concat( " ", "_2r9Zh0W", " " ))]'
       price_xpath <- '//*[contains(concat( " ", @class, " " ), concat( " ", "_16nzq18", " " ))]'
   
@@ -248,7 +271,6 @@ feature_1_scrape <- function(query, country = "us", gender = "Men"){
 
 # Takes last clicked/selected image and returns a data frame with image links 
 # and prices of recommended items for that selected image
-
 image_click_to_recommendation <- function(last_click, country = "us", gender = "Men", filter_opts = NULL){
 
   # get the queries for the recommendations
@@ -271,7 +293,7 @@ image_click_to_recommendation <- function(last_click, country = "us", gender = "
     extract2("attributes")
   
   
-    # save the image links and prices of the recommended items in a data frame
+  # save the image links and prices of the recommended items in a data frame
   temp_df = NULL
   for(i in feature_1_queries){
     index <- i
@@ -296,7 +318,6 @@ image_click_to_recommendation <- function(last_click, country = "us", gender = "
 
 
 # Takes last clicked/selected image and returns the path to that image
-
 image_click_to_path <- function(image_click){
   
   file_name <- str_replace_all(image_click, " ", "_") %>% 
@@ -308,8 +329,28 @@ image_click_to_path <- function(image_click){
 }
 
 
-
-create_image_objects_for_recommedation <- function(df, feature = 1){
+# Function to create the formatting of how the recommendations should be displayed
+create_image_objects_for_recommedation <- 
+  function(object, col = 1, feature = 1, shoe_title = NULL, feat_3_header = NULL){
+  
+  # Determine the row index  
+  row_index <- if(col == 1){
+    1:3
+  } else if (col == 2){
+    4:6
+  } else if (col == 3){
+    7:9
+  } else if (col == 4){
+    10:12
+  } else if (col == 5){
+    13:15
+  }
+  if(feature == 1){
+    df <- object[[1]][row_index,]
+  } else{
+    df <- object
+  }
+  
   loading_complete <<- FALSE
   link <- df$link
   url <- df$url
@@ -320,21 +361,65 @@ create_image_objects_for_recommedation <- function(df, feature = 1){
   
   recommendation_list <- list()
   
+  # Feature 3 already has the title information
+  if(feature == 3){
+    class_title <- feat_3_header$description
+    attribute_title <- feat_3_header$name
+  }
+  
   for(i in seq_along(link)){
-    current_link <<- link[i]
-    current_url <<- url[i]
-    current_price <<- price[i]
-    current_query <<- query[i]
+    current_link <- link[i]
+    current_url <- url[i]
+    current_price <- price[i]
+    current_query <- query[i]
+    
+    # Title query for feature 2 
+    if(feature == 2){
+      current_query <- shoe_title
+    } else if(feature == 1) {
+      if(all(row_index == 1:3)){
+        class_title <- object[[3]]$classes[i]
+        attribute_title <- object[[4]]$attribute[i]
+      } else if(all(row_index == 4:6)){
+        class_title <- object[[3]]$classes[2]
+        attribute_title <- object[[4]]$attribute[2]
+      } else if(all(row_index == 7:9)){
+        class_title <- object[[3]]$classes[3]
+        attribute_title <- object[[4]]$attribute[3]
+      } else if(all(row_index == 10:12)){
+        class_title <- object[[3]]$classes[4]
+        attribute_title <- object[[4]]$attribute[4]
+      } else if(all(row_index == 13:15)){
+        class_title <- object[[3]]$classes[5]
+        attribute_title <- object[[4]]$attribute[5]
+      }
+      
+      # If attribute was omitted, fashion is added in the front-end
+      if(attribute_title == " "){
+        attribute_title <- "fashion"
+      }
+    }
     
     if(!is.na(current_price)){
       
     recommendation_list[[i]] <- tagList(
       
       # create headers on top of the columns that contains each contain three images (rows)
-      if(i %in% c(1,4,7,11) & feature != 2){
-        h5(id = paste0("feature_", feature, "_item_class", i), 
-           tags$b(current_query),
-           align = "center")
+      if(i == 1 & feature %in% c(1, 3)){
+        p(
+          id = paste0("feature_", feature, "_item_class", i), 
+          tags$b(class_title),
+          tags$br(),
+          paste0("(", attribute_title, ")"),
+          align = "center",
+          style = "margin-top: 10px;"
+        )
+      } else if(i == 1 & feature == 2) {
+        p(
+          id = paste0("feature_", feature, "_item_class", i), 
+          tags$b(current_query),
+          align = "center",
+          style = "margin-top: 10px;")
       },
       
       img(
@@ -344,13 +429,12 @@ create_image_objects_for_recommedation <- function(df, feature = 1){
       ) %>% 
       a(href = current_url),
       
-      div(id = paste0("feature_", feature, "_price_", i), current_price)
+      p(id = paste0("feature_", feature, "_price_", i), current_price, style = "margin-bottom: 7px;")
     )
     }
   }
   
   return(recommendation_list)
-  
   loading_complete <<- TRUE
 }
 

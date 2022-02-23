@@ -1,15 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Dec 12 15:54:32 2021
-
-@author: Study
-"""
+# Torch version of the classifier
+# Not possible to apply in application since torch could not be found
 
 
 import numpy as np
 import pandas as pd
-#from matplotlib import pyplot as plt
-#import seaborn as sns
 import torch
 
 # define mapping
@@ -57,26 +51,26 @@ mapping_result = {
 # import images
 from torchvision import transforms
 from torchvision import datasets
-#transform = transforms.Compose([transforms.ToTensor()])
 
 # load model
 model_weights = torch.load("model_weights/Brands_classifier_v2.pt", map_location=torch.device('cpu'))
 model_weights = model_weights.eval()
-#image = datasets.ImageFolder("/home/nicolas/Desktop/Uni/WiSe21_22/DS_Project/fashion_recommender_app/Adidas_Shoe") 
 
 
-
+# Classification function
 def return_shoe_type(model, image):
     image = torch.Tensor(image)
-    image = image.permute(2,0,1)
+    
+    # functions takes an R array which needs to be permuted for using it in torch
+    image = image.permute(2,0,1)  
     transform = transforms.Resize((224, 224))
     image = transform(image)
+    
     #_, class_pred = torch.max(model(image[0][0].unsqueeze(0)), 1)
     _, class_pred = torch.max(model(image.unsqueeze(0)), 1)
     class_pred = class_pred.detach().numpy()
     class_pred_mapped = np.vectorize(mapping_result.get)(class_pred)[0]
+    
     return class_pred_mapped
-
-#classes = return_shoe_type(model, image)
 
 

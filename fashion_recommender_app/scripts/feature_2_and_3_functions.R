@@ -6,13 +6,16 @@ source(here("scripts/helper_functions.R"))
 extract_attributes_from_fashionpedia_raw <- function(raw_fashionpedia_output){
   #colnames(raw_fashionpedia_output) <- c("image_file", "classes","probabilities","attributes","boxes","masks","height","width")
   class_prob_above_60 <- raw_fashionpedia_output[, "scores"] %>% 
-    map(larger_than, 0.6)
+    map(larger_than, 0.6) # Class probability has to be higher than 60%
   
   
   for(i in 1:nrow(raw_fashionpedia_output)){
-    raw_fashionpedia_output[i, "classes"][["classes"]] <- raw_fashionpedia_output[i, "classes"][["classes"]][class_prob_above_60[[i]]]
-    raw_fashionpedia_output[i, "scores"][["scores"]] <- raw_fashionpedia_output[i, "scores"][["scores"]][class_prob_above_60[[i]]]
-    raw_fashionpedia_output[i, "attributes"][["attributes"]] <- raw_fashionpedia_output[i, "attributes"][["attributes"]][class_prob_above_60[[i]],]
+    raw_fashionpedia_output[i, "classes"][["classes"]] <- 
+      raw_fashionpedia_output[i, "classes"][["classes"]][class_prob_above_60[[i]]]
+    raw_fashionpedia_output[i, "scores"][["scores"]] <- 
+      raw_fashionpedia_output[i, "scores"][["scores"]][class_prob_above_60[[i]]]
+    raw_fashionpedia_output[i, "attributes"][["attributes"]] <- 
+      raw_fashionpedia_output[i, "attributes"][["attributes"]][class_prob_above_60[[i]],]
   }
   
   nrow(raw_fashionpedia_output)
@@ -54,15 +57,44 @@ extract_attributes_from_fashionpedia_raw <- function(raw_fashionpedia_output){
 # Cosine similarity / classes to add as output for outfit evaluation
 feature_3_coding <- function(class_attr_vector, shoe_brand, recomm_amount = 3){
   
-  # Drop irrelevant attributes first
+  
+  # Match the classification to the database
+  if (shoe_brand == "Asics Sneaker"){
+    shoe_brand <- "Asics Tiger"
+   } else if (shoe_brand == "Nike Sneaker"){
+     shoe_brand <- "Nike Running"
+   } else if (shoe_brand == "Ballerinas"){
+     shoe_brand <- "sandals"
+   } else if (shoe_brand == "Suit shoe"){
+     shoe_brand <- "suit shoe"
+   } else if (shoe_brand == "Lacoste sneaker"){
+     shoe_brand <- "lacoste sneaker"
+   } else if (shoe_brand == "Sandals"){
+     shoe_brand <- "sandals"
+   } else if (shoe_brand == "Vans classic slip on"){
+     shoe_brand <- "vans classic slip on"
+   } else if (shoe_brand == "Vans sneaker"){
+     shoe_brand <- "vans sneaker"
+   } else if (shoe_brand == "KSwiss Sneaker"){
+     shoe_brand <- "Kswiss sneaker"
+   } else if (shoe_brand == "UGG Boots"){
+     shoe_brand <- "UGG boots"
+   } else if (shoe_brand == "Winter Boot"){
+     shoe_brand <- "Winter boot"
+   } 
+     
+  
+    # Drop irrelevant attributes first
   class_attr_vector <- class_attr_vector[,-c(117, 118, 164, 165, 166, 183, 251, 272, 273)]
   class_attr_vector <- class_attr_vector %>% 
     ungroup() %>% 
     select(-image_file)
   shoe_brand <- str_replace_all(shoe_brand, " ", "_")
   
+  
   # filter database with respect to the given shoe + aggregations per class
   # Only use classes which were also found by fashionpedia to make them more comparable
+  
   
   # Make the recommendation more accurate (drop irrelevant attributes)
   base_feat3 <- base_feat[,-c(118, 119, 165, 166, 167, 184, 252, 273, 274)]
@@ -87,9 +119,12 @@ feature_3_coding <- function(class_attr_vector, shoe_brand, recomm_amount = 3){
                                 as.vector() %>% 
                                 unlist())
   }
+  
+  # Average over the cosines of all found classes
   cosine_score_mean <- mean(cosine_score)
   
-  # Check for largest deviation
+  
+  # Check for largest deviation (which clothing item should have a different attribute)
   min_class <- which.min(cosine_score) %>% as.numeric()
   min_class <- filtered_feat3[min_class, ]
   max_class_attr <- 
@@ -108,8 +143,9 @@ feature_3_coding <- function(class_attr_vector, shoe_brand, recomm_amount = 3){
     select(description, name)
   
   
+  
   # Give the user the feedback, which classes and attributes might be additionally suitable
-  # 5 classes with the highest probabilities in class-attribute-combination
+  # 3 classes with the highest probabilities in class-attribute-combination
   
   # Therefore, unnecessary attributes are dropped again
   add_classes <- base_feat3 %>% 
@@ -151,10 +187,10 @@ feature_3_coding <- function(class_attr_vector, shoe_brand, recomm_amount = 3){
     inner_join(class_info, by = "classes") %>% 
     select(description, name, Probability)
   
-  
   return(list(cosine_score_mean, class_attr_output, final_set))
   
 }
+
 
 # Get data frame for the depiction in output window
 cosine_similarity_to_recommendation <- function(last_click, country = "us", gender = "Men"){
@@ -190,7 +226,7 @@ cosine_similarity_to_recommendation <- function(last_click, country = "us", gend
 
 
 
-# Retrieves news articles while FP is loading
+# Retrieves news articles from vogue while FP is loading
 scrape_news <- function() {
   
   links_vogue <- c("https://www.vogue.com/fashion/trends",

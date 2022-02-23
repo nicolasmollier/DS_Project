@@ -1,6 +1,8 @@
 library(rjson)
 library(tidyverse)
 
+# Map the attributes from Fashionpedia output to make it readable as csv
+
 json_file <- "data/label_descriptions.json"
 json_data <- fromJSON(file = json_file)
 

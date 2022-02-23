@@ -1,11 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Feb 22 11:37:21 2022
-
-@author: shared
-"""
-
+# Transformed version of the classifier (torch to tensorflow)
+# Classifier which is indeed called in the application
 
 import numpy as np
 import onnx
@@ -17,11 +11,11 @@ import tensorflow as tf
 # define mapping to classes
 mapping_dict_classifier = {
     0: 'Adidas Continental 80',
-    1: 'Adidas Sneaker',
+    1: 'Adidas Shoe',
     2: 'Adidas Stan Smith',
     3: 'Adidas Ultraboost',
     4: 'Asics Gel',
-    5: 'Asics Sneaker',
+    5: 'Asics Sneaker', # Asics Tiger
     6: 'Birkenstock Arizona',
     7: 'Birkenstock Gizeh',
     8: 'Birkenstock Madrid',
@@ -32,27 +26,27 @@ mapping_dict_classifier = {
     13: 'Fila Sneaker',
     14: 'Flipflops',
     15: 'Gucci Ace',
-    16: 'Kswiss sneaker',
-    17: 'New Balance Sneaker',
+    16: 'KSwiss Sneaker',
+    17: 'NewBalance Sneaker',
     18: 'Nike AirforceOne',
     19: 'Nike Blazer',
     20: 'Nike Jordans',
-    21: 'Nike Sneaker',
+    21: 'Nike Sneaker', #Nike Running
     22: 'Puma Sneaker',
     23: 'Reebok Sneaker',
     24: 'Sketchers Sneaker',
     25: 'Steve Madden Sneaker',
-    26: 'Timberland',
+    26: 'Timberland Boots',
     27: 'Tommy Hilfiger Sneaker',
-    28: 'UGG Stiefel',
-    29: 'Winter Stiefel',
-    30: 'ballerinas',
-    31: 'business schuhe',
-    32: 'high pumps',
-    33: 'lacoste sneaker',
-    34: 'sandals',
-    35: 'vans slip on',
-    36: 'vans sneaker'}
+    28: 'UGG Boots', # UGG boots
+    29: 'Winter Boot', # Winter boot
+    30: 'Ballerinas', #sandals
+    31: 'Suit shoe', #suit shoe
+    32: 'High Heels',
+    33: 'Lacoste sneaker', #lacoste sneaker
+    34: 'Sandals', #sandals
+    35: 'Vans classic slip on', #vans classic slip on
+    36: 'Vans sneaker'} # vans sneaker
 
 
 
@@ -63,9 +57,6 @@ def preprocess(img):
     img = img.astype(np.float32)
     img = np.expand_dims(img, axis=0)
     return img
-  
-
-
 
 def predict_shoe(image):
     img = preprocess(image)
@@ -81,16 +72,5 @@ def predict_shoe(image):
 model_weights = onnx.load("model_weights/classifier.onnx")
 session = ort.InferenceSession(model_weights.SerializeToString())
 
-# # define which image to take
-# img_path = 'highheel.jpg'
-# 
-# # make prediction
-# pred = predict(img_path)
-# print(pred)
 
-# feature_3_image_shoe = pyreadr.read_r('data/feature_3_image_shoe.RData') # also works for Rds
-# img = feature_3_image_shoe
-# img = img["feature_3_image_shoe"]
-# 
-# preprocess(img)
-# predict_shoe(img)
+

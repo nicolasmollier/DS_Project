@@ -1,3 +1,4 @@
+# The general theme of the application
 
 customTheme <- shinyDashboardThemeDIY(
   ### general

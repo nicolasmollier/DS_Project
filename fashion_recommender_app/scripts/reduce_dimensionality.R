@@ -1,3 +1,5 @@
+# Different dimensionality reduction algorithms for the data exploration tab
+
 
 library(tidymodels)
 library(embed)
