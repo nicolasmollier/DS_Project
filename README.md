@@ -74,7 +74,9 @@ Note: All four folders (*data*, *model_weights*, *tpu* and *www*) have to be pla
 
 ### 3.2. How tun run the app locally on your PC
 
-As described in 3.1., put the *data*, *model_weights*, *tpu* and *www* folders from the google drive inside the same folder as the Rproj, ui.R, server.R and global.R files. For coud deployment, shiny-server needs the app to be split into *global.R*, *server.R* and *ui.R*. However, for using the app locally, you will need to copy and paste the content of *global.R*, *server.R* and *ui.R* into a new file *app.R*. Note that the ordering is important: The part from *global.R* needs to be executed first. After that add the following line at the end of *app.R*: shinyApp(ui, server). Furthermore, *app.R* needs to be saved in the same folder as the Rproj file. Now, open the project by double-clicking on the Rproj file. RStudio will oben. Next, open app.R in your Rstudio and click the Run app Button in RStudio in order to run the app.
+As described in 3.1., put the *data*, *model_weights*, *tpu* and *www* folders from the google drive inside the same folder as the Rproj, ui.R, server.R and global.R files. For coud deployment, shiny-server needs the app to be split into *global.R*, *server.R* and *ui.R*. However, for using the app locally, you will need to copy and paste the content of *global.R*, *server.R* and *ui.R* into a new file *app.R*. Note that the ordering is important: The part from *global.R* needs to be executed first. After that add the following line at the end of *app.R*: shinyApp(ui, server). Furthermore, *app.R* needs to be saved in the same folder as the Rproj file. Since the code was written to work on the bwCloud, for running the app locally, one path in the file **fashion_recommender_app/scripts/fashionpedia_python_script.py** file needs to be adapted in line 44. Change the path to where **fashion_recommender_app/tpu/models** is saved on your local machine. 
+
+Now, open the project by double-clicking on the Rproj file. RStudio will oben. Next, open app.R in your Rstudio and click the Run app Button in RStudio in order to run the app.
 
 
 
